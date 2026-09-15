@@ -224,7 +224,9 @@ def markdown_to_html_node(markdown):
             
     return ParentNode("div", nodes)
 
-def generate_page(from_path, template_path, dest_path):
+def generate_page(
+    from_path: str, template_path: str, dest_path: str | Path, basepath: str
+) -> None:
     print(f'Generating page from {from_path} to {dest_path} using {template_path}.')
     with open(from_path) as f:
         from_contents = f.read()
@@ -235,10 +237,12 @@ def generate_page(from_path, template_path, dest_path):
     title = extract_title(from_contents)
     title_replace = template_contents.replace("{{ Title }}", title)
     content_replace = title_replace.replace("{{ Content }}", html)
+    replace_href = content_replace.replace('href="/', 'href="' + basepath)
+    replace_src = replace_href.replace('src="/', 'src="' + basepath)
     directory = os.path.dirname(dest_path)
     os.makedirs(directory, exist_ok=True)
     with open(dest_path, mode='w') as f:
-        f.write(content_replace)
+        f.write(replace_src)
 
 def source_to_destination(source, destination):
     if os.path.exists(destination):
@@ -260,7 +264,7 @@ def extract_title(markdown):
     else:
         raise Exception("No Title")
 
-def generate_pages_recursive(dir_path_content, template_path, dest_dir_path):
+def generate_pages_recursive(dir_path_content, template_path, dest_dir_path, basepath):
     content = os.listdir(dir_path_content)
     for file in content:
         current = os.path.join(dir_path_content, file)
@@ -268,6 +272,6 @@ def generate_pages_recursive(dir_path_content, template_path, dest_dir_path):
         if os.path.isfile(current):
             file_path = Path(current_destination)
             new_path = file_path.with_suffix(".html")
-            generate_page(current, template_path, new_path)
+            generate_page(current, template_path, new_path, basepath)
         else:
-            generate_pages_recursive(current, template_path, current_destination)
+            generate_pages_recursive(current, template_path, current_destination, basepath)
